@@ -66,13 +66,13 @@ public class PerfComponent extends JPanel implements Runnable
        lblThreadValue = new JLabel("0");
        callbacks.customizeUiComponent(lblThreadValue);
        
-       lblUsedMemory = new JLabel("Memory Used: ");
+       lblUsedMemory = new JLabel("Memory Currently Used: ");
        callbacks.customizeUiComponent(lblUsedMemory);
        
        lblUsedMemoryValue = new JLabel("0");
        callbacks.customizeUiComponent(lblUsedMemoryValue);
        
-       lblTotalMemory = new JLabel("Total Memory: ");
+       lblTotalMemory = new JLabel("Memory Allocated:");
        callbacks.customizeUiComponent(lblTotalMemory);
        
        lblTotalMemoryValue = new JLabel("0");
@@ -92,15 +92,31 @@ public class PerfComponent extends JPanel implements Runnable
     @Override
     public void run()
     {
+        int maxThreads = 0; 
+        long maxTotalMemory = 0;
+        long maxUsedMemory = 0;
         while (true)
         {
             try
-            {
+            {  
+                //Get current
                 Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
-                lblThreadValue.setText(Integer.toString(threadSet.size()));
-                lblTotalMemoryValue.setText(String.format("%,d", Runtime.getRuntime().totalMemory()));
-                lblUsedMemoryValue.setText(String.format("%,d", Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
-                Thread.sleep(5000);
+                int curThreads = threadSet.size();
+                long totalMemory = Runtime.getRuntime().totalMemory();
+                long usedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+                
+                //Get maxes
+                maxThreads = curThreads > maxThreads ? curThreads : maxThreads;
+                maxTotalMemory = totalMemory > maxTotalMemory ? totalMemory : maxTotalMemory;
+                maxUsedMemory = usedMemory > maxUsedMemory ? usedMemory : maxUsedMemory;
+                
+                //Set labels.  Need to change to StringBuffers
+                lblThreadValue.setText(Integer.toString(threadSet.size()) + " (" + Integer.toString(maxThreads) + ")");
+                lblTotalMemoryValue.setText(String.format("%,d", totalMemory) + " (" + String.format("%,d", maxTotalMemory) + ")");
+                lblUsedMemoryValue.setText(String.format("%,d", usedMemory) + " (" + String.format("%,d", maxUsedMemory) + ")");
+                
+                //Sleep
+                Thread.sleep(3000);
             } catch (InterruptedException ex)
             {
                 Logger.getLogger(PerfComponent.class.getName()).log(Level.SEVERE, null, ex);
