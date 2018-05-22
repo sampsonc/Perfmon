@@ -26,11 +26,15 @@ package perfmon;
 import burp.BurpExtender;
 import burp.IBurpExtenderCallbacks;
 import java.awt.GridLayout;
+import java.util.Hashtable;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JSlider;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 /**
  *
@@ -47,6 +51,9 @@ public class PerfComponent extends JPanel implements Runnable
     JLabel lblTotalMemoryValue;
     JLabel lblUsedMemory;
     JLabel lblUsedMemoryValue;
+    JLabel lblSlider;
+    JSlider sldInterval;
+    int timeout;
 
     private Thread t;
 
@@ -55,6 +62,7 @@ public class PerfComponent extends JPanel implements Runnable
         this.callbacks = callbacks;
         this.extender = extender;
         t = null;
+        timeout = 1000;
         initComponents();
     }
 
@@ -77,6 +85,29 @@ public class PerfComponent extends JPanel implements Runnable
        
        lblTotalMemoryValue = new JLabel("0");
        callbacks.customizeUiComponent(lblTotalMemoryValue);
+       
+       sldInterval = new JSlider(1000, 5000, 1000);
+       sldInterval.setMajorTickSpacing(1000);;
+       sldInterval.setPaintTicks(true);
+       
+       lblSlider = new JLabel("Scan Interval (s):");
+       callbacks.customizeUiComponent(lblSlider);
+       
+       Hashtable position = new Hashtable();
+       position.put(1, new JLabel("1"));
+       position.put(2, new JLabel("2"));
+       position.put(3, new JLabel("3"));
+       position.put(4, new JLabel("4"));
+       position.put(5, new JLabel("5"));
+       sldInterval.setLabelTable(position);
+       sldInterval.setPaintLabels(true);
+       sldInterval.setSnapToTicks(true);
+       callbacks.customizeUiComponent(sldInterval);
+       
+      sldInterval.addChangeListener((ChangeEvent e) ->
+       {
+           timeout = ((JSlider)e.getSource()).getValue();
+       });
 
        GridLayout layout = new GridLayout(0, 2);
        this.setLayout(layout);
@@ -87,6 +118,8 @@ public class PerfComponent extends JPanel implements Runnable
        this.add(lblUsedMemoryValue);
        this.add(lblTotalMemory);
        this.add(lblTotalMemoryValue);
+       this.add(lblSlider);
+       this.add(sldInterval);
     }
 
     @Override
@@ -99,13 +132,13 @@ public class PerfComponent extends JPanel implements Runnable
         {
             try
             {  
-                //Get current
+                //Get current info
                 Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
                 int curThreads = threadSet.size();
                 long totalMemory = Runtime.getRuntime().totalMemory();
                 long usedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
                 
-                //Get maxes
+                //Update max info
                 maxThreads = curThreads > maxThreads ? curThreads : maxThreads;
                 maxTotalMemory = totalMemory > maxTotalMemory ? totalMemory : maxTotalMemory;
                 maxUsedMemory = usedMemory > maxUsedMemory ? usedMemory : maxUsedMemory;
@@ -116,7 +149,7 @@ public class PerfComponent extends JPanel implements Runnable
                 lblUsedMemoryValue.setText(String.format("%,d", usedMemory) + " (" + String.format("%,d", maxUsedMemory) + ")");
                 
                 //Sleep
-                Thread.sleep(3000);
+                Thread.sleep(timeout);
             } catch (InterruptedException ex)
             {
                 Logger.getLogger(PerfComponent.class.getName()).log(Level.SEVERE, null, ex);

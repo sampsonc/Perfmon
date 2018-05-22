@@ -38,6 +38,7 @@ public class BurpExtender implements IBurpExtender
         try
         {
             os.write(msg.getBytes());
+            os.write("\n".getBytes());
         } catch (IOException ex)
         {
             Logger.getLogger(BurpExtender.class.getName()).log(Level.SEVERE, null, ex);
